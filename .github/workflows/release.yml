@@ -25,7 +25,7 @@ permissions:
 env:
   TURBO_CLOUD_REPOSITORY: nitrodevco/turbo-cloud
   # The plugin notices (PluginNoticeEvent) arrive with nitrodevco/turbo-cloud#296: its commit until it is merged, then the merge.
-  TURBO_CLOUD_REF: 31e6c44f887f1013d0b874d4988c5645950fd77b
+  TURBO_CLOUD_REF: 17757fbaf4ccef49b520bffeb6623ce0efd9485b
   TAG: ${{ github.event.inputs.tag || github.ref_name }}
 
 jobs:
