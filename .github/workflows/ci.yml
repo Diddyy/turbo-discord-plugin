@@ -1,0 +1,48 @@
+# Builds and tests the plugin against turbo-cloud's main, and checks its formatting, on every push
+# and pull request. A failure here against main while release.yml's pinned ref still passes means
+# turbo-cloud moved what plugins build against: move TURBO_CLOUD_REF there with the fix.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the plugin
+        uses: actions/checkout@v4
+        with:
+          path: plugin
+
+      - name: Check out turbo-cloud
+        uses: actions/checkout@v4
+        with:
+          repository: nitrodevco/turbo-cloud
+          path: turbo-cloud
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: plugin/global.json
+
+      - name: Build turbo-cloud's assemblies the plugin references
+        run: |
+          for project in Turbo.Contracts Turbo.Primitives Turbo.Database Turbo.Pipeline Turbo.Runtime Turbo.Events; do
+            dotnet build "turbo-cloud/$project/$project.csproj" -c Release -nologo -v q
+          done
+
+      - name: Format
+        working-directory: plugin
+        run: |
+          dotnet tool restore
+          dotnet csharpier check .
+
+      - name: Test
+        run: dotnet test plugin/TurboDiscord.Tests -c Release -nologo -p:TurboCloudPath="$GITHUB_WORKSPACE/turbo-cloud" -p:TurboCloudConfiguration=Release
+
+      - name: Package
+        env:
+          TURBO_CLOUD: ${{ github.workspace }}/turbo-cloud
+          TURBO_CLOUD_CONFIGURATION: Release
+        run: sh plugin/scripts/package.sh

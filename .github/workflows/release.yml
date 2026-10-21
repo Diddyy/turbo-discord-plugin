@@ -1,0 +1,93 @@
+# Builds the plugin package a Turbo server installs, and attaches it to the release.
+#
+# Push a tag (v1.2.3): the plugin is built and tested against turbo-cloud at TURBO_CLOUD_REF, the
+# manifest is stamped with the tag's version and that ref (BuiltAgainst), and
+# discord-<tag>.zip (a zipped plugin folder) is attached to the tag's release, made here if it
+# does not exist. A server linked to this repository (admin panel, Plugins, Link from GitHub)
+# finds the release and installs the zip.
+#
+# Move TURBO_CLOUD_REF when turbo-cloud changes what plugins build against (its plugin API,
+# Turbo.Contracts.Plugins.PluginApi.VERSION, which the manifest's ApiVersion must match).
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: The tag to build and attach the package to (v1.2.3); made on the commit this run is started from if it does not exist
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  TURBO_CLOUD_REPOSITORY: nitrodevco/turbo-cloud
+  # The plugin notices (PluginNoticeEvent) arrive with nitrodevco/turbo-cloud#296: its commit until it is merged, then the merge.
+  TURBO_CLOUD_REF: 31e6c44f887f1013d0b874d4988c5645950fd77b
+  TAG: ${{ github.event.inputs.tag || github.ref_name }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      # A manual run may name a tag nobody pushed yet: make it on the commit the run was started from. A tag made with
+      # this run's token starts no second run.
+      - name: Make the tag of a manual run
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/${{ github.repository }}/git/ref/tags/$TAG" > /dev/null 2>&1 \
+            || gh api "repos/${{ github.repository }}/git/refs" -f ref="refs/tags/$TAG" -f sha="$GITHUB_SHA" > /dev/null
+
+      - name: Check out the plugin
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+          path: plugin
+
+      - name: Check out turbo-cloud
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.TURBO_CLOUD_REPOSITORY }}
+          ref: ${{ env.TURBO_CLOUD_REF }}
+          path: turbo-cloud
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: plugin/global.json
+
+      - name: Build turbo-cloud's assemblies the plugin references
+        run: |
+          for project in Turbo.Contracts Turbo.Primitives Turbo.Database Turbo.Pipeline Turbo.Runtime Turbo.Events; do
+            dotnet build "turbo-cloud/$project/$project.csproj" -c Release -nologo -v q
+          done
+
+      - name: Test
+        run: dotnet test plugin/TurboDiscord.Tests -c Release -nologo -p:TurboCloudPath="$GITHUB_WORKSPACE/turbo-cloud" -p:TurboCloudConfiguration=Release
+
+      - name: Package
+        env:
+          TURBO_CLOUD: ${{ github.workspace }}/turbo-cloud
+          TURBO_CLOUD_CONFIGURATION: Release
+        run: |
+          sh plugin/scripts/package.sh
+          version="${TAG#v}"
+          manifest=plugin/dist/discord/manifest.json
+          jq --arg version "$version" --arg built "$TURBO_CLOUD_REPOSITORY@$TURBO_CLOUD_REF" \
+            '.Version = $version | .BuiltAgainst = $built' "$manifest" > manifest.tmp
+          mv manifest.tmp "$manifest"
+          cat "$manifest"
+          (cd plugin/dist && zip -r "../../discord-$TAG.zip" discord)
+
+      - name: Attach to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            gh release upload "$TAG" "discord-$TAG.zip" --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$TAG" "discord-$TAG.zip" --generate-notes --repo "$GITHUB_REPOSITORY"
+          fi
