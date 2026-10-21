@@ -1,0 +1,56 @@
+# top-most EditorConfig file
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+indent_style = space
+indent_size = 4
+trim_trailing_whitespace = true
+
+[*.cs]
+dotnet_language_version = latest
+
+# Never qualify with `this.`
+dotnet_style_qualification_for_field = false:none
+dotnet_style_qualification_for_property = false:none
+dotnet_style_qualification_for_method = false:none
+dotnet_style_qualification_for_event = false:none
+dotnet_diagnostic.IDE0009.severity = none
+dotnet_diagnostic.IDE0003.severity = none
+dotnet_diagnostic.SA1101.severity = none
+
+# Disable file headers + all documentation
+dotnet_diagnostic.SA1633.severity = none
+dotnet_analyzer_diagnostic.category-Documentation.severity = none
+
+# Usings outside namespace (CSharpier already does this; this keeps IDEs aligned)
+csharp_using_directive_placement = outside_namespace:warning
+dotnet_diagnostic.IDE0065.severity = warning
+dotnet_diagnostic.SA1200.severity = none
+
+# Naming: const + static readonly => ALL_CAPS_WITH_UNDERSCORES
+dotnet_naming_rule.constants_all_caps.severity = warning
+dotnet_naming_rule.constants_all_caps.symbols = constants
+dotnet_naming_rule.constants_all_caps.style = all_caps_underscores
+dotnet_naming_symbols.constants.applicable_kinds = field
+dotnet_naming_symbols.constants.required_modifiers = const
+dotnet_naming_style.all_caps_underscores.capitalization = all_upper
+dotnet_naming_style.all_caps_underscores.word_separator = _
+
+dotnet_naming_rule.static_readonly_all_caps.severity = warning
+dotnet_naming_rule.static_readonly_all_caps.symbols = static_readonly_fields
+dotnet_naming_rule.static_readonly_all_caps.style = all_caps_underscores
+dotnet_naming_symbols.static_readonly_fields.applicable_kinds = field
+dotnet_naming_symbols.static_readonly_fields.required_modifiers = static, readonly
+
+# Naming: private instance fields => _camelCase
+dotnet_naming_rule.private_fields_underscore.severity = warning
+dotnet_naming_rule.private_fields_underscore.symbols = private_fields
+dotnet_naming_rule.private_fields_underscore.style = underscore_prefix
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+dotnet_naming_symbols.private_fields.applicable_modifiers = !static
+dotnet_naming_style.underscore_prefix.required_prefix = _
+dotnet_naming_style.underscore_prefix.capitalization = camel_case

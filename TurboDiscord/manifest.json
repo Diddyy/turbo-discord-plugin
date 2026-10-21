@@ -1,0 +1,10 @@
+{
+    "Name": "Turbo Discord",
+    "Key": "discord",
+    "Version": "1.0.0",
+    "Author": "Diddyy",
+    "AssemblyFile": "TurboDiscord.dll",
+    "Dependencies": [],
+    "TablePrefix": "discord_",
+    "ApiVersion": 1
+}

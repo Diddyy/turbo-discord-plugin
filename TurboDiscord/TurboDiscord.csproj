@@ -1,0 +1,70 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>TurboDiscord</RootNamespace>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <SelfContained>false</SelfContained>
+    <!-- TurboDiscord.xml: the admin panel's Settings page shows each setting's summary from it. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <!--
+      The plugin folder holds the plugin alone: Turbo loads every .dll beside the manifest into
+      the plugin's own load context, so a copy of a host assembly there would be a second,
+      incompatible copy of its types. `dotnet ef` needs them beside it, so design time copies.
+    -->
+    <CopyLocalLockFileAssemblies Condition="'$(DesignTime)' != 'true'"
+      >false</CopyLocalLockFileAssemblies
+    >
+    <TurboPrivate>false</TurboPrivate>
+    <TurboPrivate Condition="'$(DesignTime)' == 'true'">true</TurboPrivate>
+  </PropertyGroup>
+  <ItemGroup>
+    <None
+      Include="manifest.json"
+      CopyToOutputDirectory="PreserveNewest"
+      CopyToPublishDirectory="PreserveNewest"
+    />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Microsoft.Orleans.Core.Abstractions" />
+    <PackageReference Include="Microsoft.Orleans.Serialization.Abstractions" />
+    <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference
+      Include="Turbo.Contracts"
+      HintPath="$(TurboCloudPath)\Turbo.Contracts\bin\$(TurboCloudConfiguration)\net10.0\Turbo.Contracts.dll"
+      Private="$(TurboPrivate)"
+    />
+    <Reference
+      Include="Turbo.Primitives"
+      HintPath="$(TurboCloudPath)\Turbo.Primitives\bin\$(TurboCloudConfiguration)\net10.0\Turbo.Primitives.dll"
+      Private="$(TurboPrivate)"
+    />
+    <Reference
+      Include="Turbo.Database"
+      HintPath="$(TurboCloudPath)\Turbo.Database\bin\$(TurboCloudConfiguration)\net10.0\Turbo.Database.dll"
+      Private="$(TurboPrivate)"
+    />
+    <Reference
+      Include="Turbo.Pipeline"
+      HintPath="$(TurboCloudPath)\Turbo.Pipeline\bin\$(TurboCloudConfiguration)\net10.0\Turbo.Pipeline.dll"
+      Private="$(TurboPrivate)"
+    />
+    <!-- The event system: the hotel's events (reports, bans, logins) and plugin notices. -->
+    <Reference
+      Include="Turbo.Events"
+      HintPath="$(TurboCloudPath)\Turbo.Events\bin\$(TurboCloudConfiguration)\net10.0\Turbo.Events.dll"
+      Private="$(TurboPrivate)"
+    />
+    <Reference
+      Include="Turbo.Runtime"
+      HintPath="$(TurboCloudPath)\Turbo.Runtime\bin\$(TurboCloudConfiguration)\net10.0\Turbo.Runtime.dll"
+      Private="$(TurboPrivate)"
+    />
+  </ItemGroup>
+</Project>

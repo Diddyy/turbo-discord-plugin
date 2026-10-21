@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <!-- The host's versions: a plugin must load against the assemblies the server already has. -->
+  <Import
+    Project="$(TurboCloudPath)\Directory.Packages.props"
+    Condition="Exists('$(TurboCloudPath)\Directory.Packages.props')"
+  />
+</Project>

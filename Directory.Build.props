@@ -1,0 +1,18 @@
+<Project>
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <!--
+      The turbo-cloud checkout the plugin builds against: its Turbo.* assemblies are the host's,
+      so they are referenced and never copied into the plugin's folder. Override with
+      -p:TurboCloudPath=... or the TurboCloudPath environment variable.
+    -->
+    <TurboCloudPath Condition="'$(TurboCloudPath)' == ''"
+      >$(MSBuildThisFileDirectory)..\turbo-cloud</TurboCloudPath
+    >
+    <TurboCloudConfiguration Condition="'$(TurboCloudConfiguration)' == ''"
+      >Debug</TurboCloudConfiguration
+    >
+  </PropertyGroup>
+</Project>
