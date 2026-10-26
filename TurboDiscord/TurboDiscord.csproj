@@ -50,21 +50,5 @@
       HintPath="$(TurboCloudPath)\Turbo.Database\bin\$(TurboCloudConfiguration)\net10.0\Turbo.Database.dll"
       Private="$(TurboPrivate)"
     />
-    <Reference
-      Include="Turbo.Pipeline"
-      HintPath="$(TurboCloudPath)\Turbo.Pipeline\bin\$(TurboCloudConfiguration)\net10.0\Turbo.Pipeline.dll"
-      Private="$(TurboPrivate)"
-    />
-    <!-- The event system: the hotel's events (reports, bans, logins) and plugin notices. -->
-    <Reference
-      Include="Turbo.Events"
-      HintPath="$(TurboCloudPath)\Turbo.Events\bin\$(TurboCloudConfiguration)\net10.0\Turbo.Events.dll"
-      Private="$(TurboPrivate)"
-    />
-    <Reference
-      Include="Turbo.Runtime"
-      HintPath="$(TurboCloudPath)\Turbo.Runtime\bin\$(TurboCloudConfiguration)\net10.0\Turbo.Runtime.dll"
-      Private="$(TurboPrivate)"
-    />
   </ItemGroup>
 </Project>

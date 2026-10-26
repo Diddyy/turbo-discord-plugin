@@ -63,8 +63,8 @@ type: a plugin publishes one on the hotel's event system, and this plugin posts 
 depends on the other: with this plugin not loaded, a notice goes nowhere.
 
 ```csharp
-// In StartAsync: the host's event system (reference Turbo.Events from turbo-cloud).
-_events = services.GetRequiredService<IHostServices>().GetRequiredService<EventSystem>();
+// In StartAsync: the host's event system (IEventPublisher, in Turbo.Primitives).
+_events = services.GetRequiredService<IHostServices>().GetRequiredService<IEventPublisher>();
 
 // When something happens, after it is saved:
 await _events.PublishAsync(
