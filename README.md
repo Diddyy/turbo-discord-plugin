@@ -160,35 +160,38 @@ posts made from them). Uninstalling the plugin from the panel drops them.
 
 ## Build and install
 
-The plugin builds against a built turbo-cloud checkout (its `Turbo.*` assemblies are the host's and
-are never copied into the plugin's folder), one with `PluginNoticeEvent` (turbo-cloud #296):
+The plugin is its sources: a Turbo server compiles `server/**/*.cs` as it loads the plugin
+(turbo-cloud `docs/plugin-loading.md`), and its folder holds nothing built.
+`server/TurboDiscord.csproj` imports what the server compiles plugins with
+(`plugin-sdk/Turbo.Plugin.props` beside the server's assemblies: the same references, C# and
+policy), so building it is the server's check:
 
 ```sh
-TURBO_CLOUD=/path/to/turbo-cloud ./scripts/package.sh
+TurboBin=/path/to/turbo-cloud/Turbo.Main/bin/Debug/net10.0 dotnet build server/TurboDiscord.csproj
+TurboBin=/path/to/turbo-cloud/Turbo.Main/bin/Debug/net10.0 ./scripts/package.sh
 ```
 
-That leaves `dist/discord/` with `TurboDiscord.dll`, `TurboDiscord.xml` (the settings' descriptions
-on the panel) and `manifest.json`. Copy that folder into the server's plugin folder
-(`Turbo:Plugin:PluginFolderPath`, by default `plugins/` beside `Turbo.Main`), as `plugins/discord/`,
-and restart the server (or let hot reload pick it up). On load the plugin creates its tables
-through the server's own migrator, so the server's `Turbo:Database:Migrate` setting applies to them
-as to core's tables.
+`TurboBin` is the bin folder of the server to build against (by default `../turbo-cloud`'s built
+`Turbo.Main`). `package.sh` checks the sources compile, then leaves `dist/discord/` with
+`manifest.json` and `server/`. Copy that folder into the server's plugin folder
+(`Turbo:Plugin:PluginFolderPath`, by default `plugins/` beside `Turbo.Main`), as `plugins/discord/`
+(or zip it and install it from the admin panel: Plugins, Install), and restart the server (or let
+hot reload pick it up). On load the plugin creates its tables through the server's own migrator, so
+the server's `Turbo:Database:Migrate` setting applies to them as to core's tables.
 
 ### Releases
 
-A tag `v1.2.3` (pushed, or named in a manual run of Release, which makes it on that commit) runs
-`.github/workflows/release.yml`: it builds and tests the plugin against turbo-cloud at the ref
-pinned there (`TURBO_CLOUD_REF`), stamps the manifest's `Version` (1.2.3) and `BuiltAgainst` (that
-ref), and attaches `discord-v1.2.3.zip` to the tag's release. A server linked to this repository in
-the admin panel (Plugins, Link from GitHub) is offered the release and installs the zip.
-`ApiVersion` in the manifest is the turbo-cloud plugin API it is built for
-(`Turbo.Contracts.Plugins.PluginApi`); move `TURBO_CLOUD_REF` and it together when turbo-cloud
-changes that.
+A server linked to this repository in the admin panel (Plugins, Link from GitHub) installs the
+sources of its newest release's tag, GitHub's source archive: there is no built asset. Set the
+manifest's `Version` (1.2.3), then push the tag `v1.2.3` (or name it in a manual run of Release,
+which makes it on that commit): `.github/workflows/release.yml` checks the tag matches the manifest,
+checks and tests the plugin against turbo-cloud's `main` and makes the release. `ApiVersion` in the
+manifest is the turbo-cloud plugin API it is written for (`Turbo.Contracts.Plugins.PluginApi`).
 
 ## Tests
 
 ```sh
-dotnet test TurboDiscord.Tests -p:TurboCloudPath=/path/to/turbo-cloud
+TurboBin=/path/to/turbo-cloud/Turbo.Main/bin/Debug/net10.0 dotnet test tests/TurboDiscord.Tests
 dotnet tool restore && dotnet csharpier check .
 ```
 
@@ -200,8 +203,8 @@ runs both on every push and pull request against turbo-cloud's `main`.
 ## Migrations
 
 ```sh
-TurboCloudPath=/path/to/turbo-cloud DesignTime=true dotnet ef migrations add <Name> \
-  --project TurboDiscord/TurboDiscord.csproj --context DiscordDbContext --output-dir Database/Migrations
+TurboBin=/path/to/turbo-cloud/Turbo.Main/bin/Debug/net10.0 DesignTime=true dotnet ef migrations add <Name> \
+  --project server/TurboDiscord.csproj --context DiscordDbContext --output-dir Database/Migrations
 ```
 
 ## Screens

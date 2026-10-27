@@ -1,13 +1,9 @@
-# Builds the plugin package a Turbo server installs, and attaches it to the release.
+# Makes the GitHub release a Turbo server installs the plugin from: its sources at the tag (GitHub's
+# source archive), which the server compiles. There is no built asset.
 #
-# Push a tag (v1.2.3): the plugin is built and tested against turbo-cloud at TURBO_CLOUD_REF, the
-# manifest is stamped with the tag's version and that ref (BuiltAgainst), and
-# discord-<tag>.zip (a zipped plugin folder) is attached to the tag's release, made here if it
-# does not exist. A server linked to this repository (admin panel, Plugins, Link from GitHub)
-# finds the release and installs the zip.
-#
-# Move TURBO_CLOUD_REF when turbo-cloud changes what plugins build against (its plugin API,
-# Turbo.Contracts.Plugins.PluginApi.VERSION, which the manifest's ApiVersion must match).
+# Push a tag v1.2.3 that matches the manifest's Version: the plugin is checked and tested against
+# turbo-cloud's main and the tag's release is made. A server linked to this repository (admin
+# panel, Plugins, Link from GitHub) finds the release and installs the tag's sources.
 name: Release
 
 on:
@@ -16,17 +12,16 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: The tag to build and attach the package to (v1.2.3); made on the commit this run is started from if it does not exist
+        description: The tag to release (v1.2.3); made on the commit this run is started from if it does not exist
         required: true
 
 permissions:
   contents: write
 
 env:
-  TURBO_CLOUD_REPOSITORY: nitrodevco/turbo-cloud
-  # The plugin notices (PluginNoticeEvent) arrive with nitrodevco/turbo-cloud#296: its commit until it is merged, then the merge.
-  TURBO_CLOUD_REF: 17757fbaf4ccef49b520bffeb6623ce0efd9485b
   TAG: ${{ github.event.inputs.tag || github.ref_name }}
+  TurboCloudPath: ${{ github.workspace }}/turbo-cloud
+  TurboCloudConfiguration: Release
 
 jobs:
   release:
@@ -48,46 +43,37 @@ jobs:
           ref: ${{ env.TAG }}
           path: plugin
 
+      # What is installed is the tag's manifest as it is: its Version is the release's.
+      - name: The tag is the manifest's version
+        run: |
+          version=$(jq -r .Version plugin/manifest.json)
+          if [ "v$version" != "$TAG" ]; then
+            echo "manifest.json says Version $version: tag v$version, or change the manifest first." >&2
+            exit 1
+          fi
+
       - name: Check out turbo-cloud
         uses: actions/checkout@v4
         with:
-          repository: ${{ env.TURBO_CLOUD_REPOSITORY }}
-          ref: ${{ env.TURBO_CLOUD_REF }}
+          repository: nitrodevco/turbo-cloud
           path: turbo-cloud
 
       - uses: actions/setup-dotnet@v4
         with:
           global-json-file: plugin/global.json
 
-      - name: Build turbo-cloud's assemblies the plugin references
-        run: |
-          for project in Turbo.Contracts Turbo.Primitives Turbo.Database Turbo.Pipeline Turbo.Runtime Turbo.Events; do
-            dotnet build "turbo-cloud/$project/$project.csproj" -c Release -nologo -v q
-          done
+      - name: Build turbo-cloud's server
+        run: dotnet build turbo-cloud/Turbo.Main/Turbo.Main.csproj -c Release -nologo -v q
 
       - name: Test
-        run: dotnet test plugin/TurboDiscord.Tests -c Release -nologo -p:TurboCloudPath="$GITHUB_WORKSPACE/turbo-cloud" -p:TurboCloudConfiguration=Release
+        run: dotnet test plugin/tests/TurboDiscord.Tests -c Release -nologo
 
-      - name: Package
-        env:
-          TURBO_CLOUD: ${{ github.workspace }}/turbo-cloud
-          TURBO_CLOUD_CONFIGURATION: Release
-        run: |
-          sh plugin/scripts/package.sh
-          version="${TAG#v}"
-          manifest=plugin/dist/discord/manifest.json
-          jq --arg version "$version" --arg built "$TURBO_CLOUD_REPOSITORY@$TURBO_CLOUD_REF" \
-            '.Version = $version | .BuiltAgainst = $built' "$manifest" > manifest.tmp
-          mv manifest.tmp "$manifest"
-          cat "$manifest"
-          (cd plugin/dist && zip -r "../../discord-$TAG.zip" discord)
+      - name: Check the package
+        run: sh plugin/scripts/package.sh
 
-      - name: Attach to the release
+      - name: Make the release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
-            gh release upload "$TAG" "discord-$TAG.zip" --clobber --repo "$GITHUB_REPOSITORY"
-          else
-            gh release create "$TAG" "discord-$TAG.zip" --generate-notes --repo "$GITHUB_REPOSITORY"
-          fi
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1 \
+            || gh release create "$TAG" --verify-tag --generate-notes --repo "$GITHUB_REPOSITORY"
