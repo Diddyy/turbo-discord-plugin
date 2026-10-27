@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The plugin's C# sources, which the server compiles as it loads the plugin (turbo-cloud
+    docs/plugin-loading.md). This project is for the editor, the tests and `dotnet ef`: it builds
+    against what the server compiles plugins with (plugin-sdk/Turbo.Plugin.props: the same
+    references, C# version and policy analyzer), so it fails as the server would.
+  -->
+  <Import Project="$(TurboBin)/plugin-sdk/Turbo.Plugin.props" />
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>TurboDiscord</RootNamespace>
+    <!-- The admin panel's Settings page shows each setting's summary from the doc comments. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(DesignTime)' == 'true'">
+    <!-- dotnet ef, at the server's EF Core version. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+  </ItemGroup>
+</Project>

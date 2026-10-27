@@ -4,15 +4,18 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
     <!--
-      The turbo-cloud checkout the plugin builds against: its Turbo.* assemblies are the host's,
-      so they are referenced and never copied into the plugin's folder. Override with
-      -p:TurboCloudPath=... or the TurboCloudPath environment variable.
+      The Turbo server the plugin builds against: TurboBin is the folder holding its assemblies and
+      its plugin-sdk/ (turbo-cloud docs/plugin-loading.md). A turbo-cloud checkout's built server by
+      default; any server's bin folder with -p:TurboBin=... or the TurboBin environment variable.
     -->
     <TurboCloudPath Condition="'$(TurboCloudPath)' == ''"
-      >$(MSBuildThisFileDirectory)..\turbo-cloud</TurboCloudPath
+      >$([System.IO.Path]::GetFullPath($([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '../turbo-cloud'))))</TurboCloudPath
     >
     <TurboCloudConfiguration Condition="'$(TurboCloudConfiguration)' == ''"
       >Debug</TurboCloudConfiguration
+    >
+    <TurboBin Condition="'$(TurboBin)' == ''"
+      >$(TurboCloudPath)/Turbo.Main/bin/$(TurboCloudConfiguration)/net10.0</TurboBin
     >
   </PropertyGroup>
 </Project>

@@ -1,6 +1,7 @@
-# Builds and tests the plugin against turbo-cloud's main, and checks its formatting, on every push
-# and pull request. A failure here against main while release.yml's pinned ref still passes means
-# turbo-cloud moved what plugins build against: move TURBO_CLOUD_REF there with the fix.
+# Checks the plugin against turbo-cloud's main on every push and pull request: its sources compile
+# as the server compiles them (the same references, C# and policy, plugin-sdk/Turbo.Plugin.props),
+# its tests pass and its formatting holds. A failure here means turbo-cloud moved what plugins
+# build on: fix the plugin.
 name: CI
 
 on:
@@ -10,6 +11,9 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      TurboCloudPath: ${{ github.workspace }}/turbo-cloud
+      TurboCloudConfiguration: Release
     steps:
       - name: Check out the plugin
         uses: actions/checkout@v4
@@ -26,11 +30,9 @@ jobs:
         with:
           global-json-file: plugin/global.json
 
-      - name: Build turbo-cloud's assemblies the plugin references
-        run: |
-          for project in Turbo.Contracts Turbo.Primitives Turbo.Database Turbo.Pipeline Turbo.Runtime Turbo.Events; do
-            dotnet build "turbo-cloud/$project/$project.csproj" -c Release -nologo -v q
-          done
+      # The server's bin folder: its assemblies and plugin-sdk/, what the server compiles plugins with.
+      - name: Build turbo-cloud's server
+        run: dotnet build turbo-cloud/Turbo.Main/Turbo.Main.csproj -c Release -nologo -v q
 
       - name: Format
         working-directory: plugin
@@ -39,10 +41,7 @@ jobs:
           dotnet csharpier check .
 
       - name: Test
-        run: dotnet test plugin/TurboDiscord.Tests -c Release -nologo -p:TurboCloudPath="$GITHUB_WORKSPACE/turbo-cloud" -p:TurboCloudConfiguration=Release
+        run: dotnet test plugin/tests/TurboDiscord.Tests -c Release -nologo
 
       - name: Package
-        env:
-          TURBO_CLOUD: ${{ github.workspace }}/turbo-cloud
-          TURBO_CLOUD_CONFIGURATION: Release
         run: sh plugin/scripts/package.sh

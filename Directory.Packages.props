@@ -1,10 +1,16 @@
 <Project>
+  <!--
+    The tests' packages, at the versions turbo-cloud uses. The plugin itself takes no package: it is
+    compiled against the server's own assemblies (plugin-sdk/Turbo.Plugin.props).
+  -->
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
-  <!-- The host's versions: a plugin must load against the assemblies the server already has. -->
-  <Import
-    Project="$(TurboCloudPath)\Directory.Packages.props"
-    Condition="Exists('$(TurboCloudPath)\Directory.Packages.props')"
-  />
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.19" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.19" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <PackageVersion Include="xunit.v3" Version="3.2.2" />
+  </ItemGroup>
 </Project>
